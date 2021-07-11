@@ -1,0 +1,474 @@
+#include <iostream>
+#include <fstream>
+#include <string.h>
+#include <iomanip> 
+using namespace std;
+
+struct Dabar{
+	string nabar, kategori; //  Napes = Nama pemesanan ; Tanpes = Tanggal pemesanan ;
+	int harbar, jumbar; //  Nopes = no pemesanan ; Jumpes = Jumlah Pesanan ; Tothar = Total harga ; 
+}; 
+
+
+struct Customer{
+	string nama, barang;
+	int tot_bayar, bayar;
+};
+		
+Dabar data[99], barang[99];
+
+string replace(string str)
+{
+	for (int i =0 ; str[i] ; i++){
+		if(str[i] == ' ') str.replace(i,1,1,'_');
+	}
+	return str;
+}
+
+string unreplace(string str)
+{
+	for (int i =0 ; str[i] ; i++){
+		if(str[i] == '_') str.replace(i,1,1,' ');
+	}
+	return str;	
+}
+
+bool cek_sort(Dabar data1,Dabar data2, int pil, bool cek){
+	switch(pil){
+	case 1 :if (data1.nabar < data2.nabar && cek == true) return true;
+			else if (data1.nabar > data2.nabar && cek == false) return true;
+			break;
+	case 2 :if (data1.jumbar > data2.jumbar && cek == true) return true;
+			else if (data1.jumbar < data2.jumbar && cek == false) return true;
+			break;
+	case 3 :if (data1.harbar < data2.harbar && cek == true) return true;
+			else if (data1.harbar > data2.harbar && cek == false) return true;
+			break; 		 			
+	case 4 :if (data1.kategori < data2.kategori && cek == true) return true;
+			else if (data1.kategori > data2.kategori && cek == false) return true;
+			break;
+	}
+	return false;	
+}
+
+void quick_sort(int first, int last, int pil){
+	int low, high;
+	low= first;
+	high= last;  
+	Dabar temp, list_separator;
+	list_separator = data[(first+last)/2];
+	do{
+		while (cek_sort(data[low], list_separator, pil, true)) low++;
+		while (cek_sort(data[high], list_separator, pil, false)) high--;
+		if (low<=high)
+		{
+			temp = data[low];
+			data[low++]= data[high];
+			data[high--]= temp;
+		}
+	}while (low<=high);
+		if (first<high) quick_sort(first, high, pil);
+		if (low<last) quick_sort(low, last, pil);
+}
+
+void Output(Dabar temp[],int i, int akhir){
+	
+	int no = 1;
+	cout<<setfill('=')<<setw(90)<<"=";
+	cout<<"\nNo\tNama Barang\tKategori Barang\t\t\tJumlah Barang\tHarga Barang\n";
+	cout<<setfill('=')<<setw(90)<<"="<<endl;
+	do{
+		cout<<setfill(' ')<<setiosflags(ios::left)<<setw(8)<< no;
+		cout<<setfill(' ')<<setiosflags(ios::left)<<setw(16)<< unreplace(temp[i].nabar);
+		cout<<setfill(' ')<<setiosflags(ios::left)<<setw(32)<< unreplace(temp[i].kategori);
+		cout<<setfill(' ')<<setiosflags(ios::left)<<setw(16)<< temp[i].jumbar;
+		cout<< temp[i].harbar 
+		<<endl;
+		i++;no++;	
+	}while(i < akhir);
+	cout<<setfill('=')<<setw(90)<<"="<<endl;
+}
+
+void outFile(int &j, string listFile){
+	ifstream output(listFile.c_str());
+	if (output.is_open()){
+		while(!output.eof())
+		{
+			output >> data[j].nabar >> data[j].kategori >> data[j].jumbar >> data[j].harbar;
+			j++;		  	  	
+		}
+	}
+	output.close();	
+}
+	
+
+void searchInFile(Dabar cari[]){
+	int l, j; Dabar dat_search[99], temp; 
+	string listFile; bool found;
+	
+	ifstream myFileIn("ListFile.txt");
+	while(!myFileIn.eof()){
+		j = 0; found = false;
+		myFileIn >> listFile;
+		ifstream output(listFile.c_str());
+		if (output.is_open()){
+			while(!output.eof())
+			{
+				output >> dat_search[j].nabar >> dat_search[j].kategori >> dat_search[j].jumbar >> dat_search[j].harbar;
+				j++;		  	  	
+			}
+		}
+		output.close();	
+		for(int k = 0; k < j; k++){
+			for (l = 0; cari[l].jumbar; l++){
+				if (cari[l].nabar == dat_search[k].nabar && cari[l].jumbar != 0 && cari[l].harbar == dat_search[k].harbar){
+					if(dat_search[k].jumbar > cari[l].jumbar){
+						dat_search[k].jumbar = dat_search[k].jumbar - cari[l].jumbar;
+						cari[l].jumbar = 0; 
+					}else{ 
+						cari[l].jumbar = cari[l].jumbar - dat_search[k].jumbar;
+						dat_search[k].jumbar = 0; 
+					} 
+					found = true; 
+				}	 
+			}
+		}
+		
+		if(found) {
+			ofstream input(listFile.c_str()); 
+			if (input.is_open()){
+				l = 0;	
+				while(l < j-1){
+					if (dat_search[l].jumbar != 0){
+					input << left << setw(30) << replace(dat_search[l].nabar)
+						  << right << setw(30) << replace(dat_search[l].kategori) 
+						  << setprecision(10) << setw(30) << dat_search[l].jumbar
+						  << setprecision(10) << setw(30) << dat_search[l].harbar
+						  << endl;
+					}
+				l++;			  	
+				}
+			}	
+			input.close();	
+		}	
+	}
+	myFileIn.close();
+}
+
+
+
+void getP(int awal, int &akhir){
+	for (int i = 0; i < akhir ; i++){
+		if(data[awal].kategori == data[i].kategori){
+			if(data[i].kategori != data[i+1].kategori){
+				akhir = i;
+				break;
+			}		
+		}
+	}	
+	
+}
+
+void pemBelian(int awal, int &banyakBarang, int akhir){
+	int pil;
+	char jwb; 
+	cout << "------ Sort By ------\n";
+	cout << "1. Nama Barang\n2. Jumlah Barang\n3. Harga Barang\nPilih : "; cin >> pil;
+	quick_sort(awal, akhir, pil);
+	system("cls");
+	Output(data, awal, akhir+1);
+	
+	do{	ulang :		
+		cout << "\nPilih barang : "; cin >> pil;
+		barang[banyakBarang] = data[awal+(pil-1)];
+		cout << "Jumlah barang : "; cin >> barang[banyakBarang].jumbar;
+		if (data[awal+(pil-1)].jumbar < barang[banyakBarang].jumbar){ cout << "Input jumlah melebihi stock, harap diulang\n";  goto ulang;}
+		data[awal+(pil-1)].jumbar = data[awal+(pil-1)].jumbar - barang[banyakBarang].jumbar; 
+		banyakBarang++;
+		cout << "Beli lagi [y/n] : "; cin >> jwb;
+		
+	}while(jwb == 'Y' || jwb == 'y');	
+}
+
+void Sorting_kate(int &awal, int &akhir, int panjang){
+	quick_sort(0, akhir-1, 4); 
+	int pil, menu[99];
+	bool loop = true; 
+	
+	int i = 0, h = 1; 
+		do{
+			if (loop){ cout << h << ". " << data[i].kategori << endl; menu[h-1] = i; h++;}
+			loop = false;
+			if(data[i].kategori != data[i+1].kategori) loop = true;
+		i++;	
+		}while(i<panjang);
+				
+	cout << "Pilih Kategori : "; cin >> pil;
+	getP(menu[pil-1], akhir);
+	awal = menu[pil-1];
+	
+}
+
+
+void merge(int &j){
+	Dabar temp[99]; Dabar Ndata={"", "", 0, 0} ;
+	for(int i = 0; i < j; i++){ temp[i] = data[i]; data[i] = Ndata;}
+	
+	int h = 0;
+	for(int i = 0; i < j; i++){
+		if(temp[i].nabar != "") data[h] = temp[i];
+		for(int k = j; k > i; k--){ 
+			if (temp[i].nabar == temp[k].nabar && temp[i].harbar == temp[k].harbar){
+				data[h].jumbar = data[h].jumbar + temp[k].jumbar;
+				temp[k] = Ndata;
+			}	
+		}
+		if (temp[i].nabar != "") h++;
+	}
+	
+	j = h;
+}
+
+void inFile(string listFile){
+	int banyakdata, i =0; Dabar data1;
+	ofstream input(listFile.c_str(), ios::app); 
+	if (input.is_open()){
+		cout << "\nBanyak data: "; cin >> banyakdata;	
+		while(i < banyakdata){
+			cin.ignore();
+			cout << "\nNama Barang\t: "; getline(cin,data1.nabar);
+			cout << "Kategori Barang\t: "; getline(cin,data1.kategori);
+			cout << "Jumlah Barang\t: "; cin >> data1.jumbar;
+			cout << "Harga Barang\t: "; cin >> data1.harbar;
+			input << left << setw(30) << replace(data1.nabar)
+			  << right << setw(30) << replace(data1.kategori) 
+				  << setprecision(10) << setw(30) << data1.jumbar
+				  << setprecision(10) << setw(30) << data1.harbar
+				  << endl;
+		i++;		  	
+		}
+	}	
+		input.close();
+}
+
+void getFile(string use, int &panjang){
+	string listFile[99];
+	int i = 0;
+	panjang = 0;
+	
+	ifstream myFileIn("ListFile.txt");
+	if (!myFileIn.is_open()) exit(0);
+	while(!myFileIn.eof()){
+		myFileIn >> listFile[i];
+		if(use == "beli" || use == "all") outFile(panjang, listFile[i]);
+		i++;
+	}
+	
+	if(use == "output" || use == "input"){
+	myFileIn.close();	
+		for(int k =0 ; k < i-1; k++) cout << k+1 << ". " << listFile[k] << endl;
+		cout<< "Pilih File : "; cin>> i;
+		if (use == "output"){ 
+			outFile(panjang, listFile[i-1]);
+		}else if(use == "input") inFile(listFile[i-1]);	
+	}
+	
+}
+
+void Input(){
+	system("cls");
+	string namfil;int pilih; 
+	
+	cout<< "==========================\n";
+	cout<< "    Input Stock Barang\n";
+	cout<< "==========================\n";
+	cout<< "1. Gunakan File yang sudah ada\n2. Buat file baru\nPilih : "; cin>> pilih;
+	
+	switch(pilih){
+		case 1 : 
+			getFile("input", pilih);
+			break;
+		case 2 :
+			cout<< "Masukan nama file yang digunakan : "; cin>> namfil;
+			ofstream myFileIn("ListFile.txt", ios::app);
+			myFileIn << namfil << endl;
+			myFileIn.close();
+			inFile(namfil);
+			break;
+	}
+	
+}
+
+void sOutput(){
+	system("cls");
+	string namfil; int pilih, panjang; 
+	
+	cout<< "==========================\n";
+	cout<< "    Stock Barang\n";
+	cout<< "==========================\n";
+	cout<< "1. All Output\n2. File Output\nPilih : "; cin>> pilih;
+	
+	switch(pilih){
+		case 1 : getFile("all", panjang);
+				 merge(panjang); 
+				 cout << "------ Sort By ------\n";
+				 cout << "1. Nama Barang\n2. Jumlah Barang\n3. Harga Barang\n4. Kategori Barang\nPilih : "; cin >> pilih;
+				 quick_sort(0, panjang-1, pilih);
+				 system("cls");
+				 Output(data, 0, panjang);
+				 break;
+		case 2 : getFile("output", panjang); 
+				 cout << "------ Sort By ------\n";
+				 cout << "1. Nama Barang\n2. Jumlah Barang\n3. Harga Barang\n4. Kategori Barang\nPilih : "; cin >> pilih;
+				 quick_sort(0, panjang-2, pilih);
+				 system("cls");
+				 Output(data, 0, panjang-1);
+				 break;		 
+	}
+	
+}
+	
+void beli(float dis){
+	int panjang, banyakBarang = 0, awal, akhir;
+	char jwb; Customer plgn;
+	system("cls");
+	cout<< "==========================\n";
+	cout<< "      Toko Krisbow\n";
+	cout<< "==========================\n";
+	
+	getFile("beli", panjang);
+	merge(panjang);
+	akhir = panjang;
+	do{
+	Sorting_kate(awal, akhir, panjang);
+	pemBelian(awal, banyakBarang, akhir);
+	Output(barang, 0, banyakBarang);
+	cout << "Beli Lagi [y/n] : "; cin >> jwb;
+	}while(jwb == 'y' || jwb == 'Y');
+	
+	plgn.tot_bayar = 0;
+	for(int i = 0; i < banyakBarang ; i++){
+		plgn.tot_bayar = plgn.tot_bayar + (barang[i].harbar * barang[i].jumbar);
+		string s = to_string(barang[i].jumbar);
+		plgn.barang = plgn.barang + barang[i].nabar + ":" + s + ", ";	
+	}
+	
+	plgn.tot_bayar = plgn.tot_bayar - (plgn.tot_bayar * dis);
+	dis = plgn.tot_bayar * dis;
+	ofstream save("rekap_beli.txt", ios::app);
+	cin.ignore();
+	cout << "\nNama\t\t: "; getline(cin,plgn.nama);
+	cout << "Total bayar\t: " << plgn.tot_bayar;
+	cout << "\nDiskon\t\t: " << dis << endl;
+	cout << "Bayar\t\t: "; cin >> plgn.bayar;
+	cout << "Kembalian\t: " << plgn.bayar - plgn.tot_bayar ;
+	cout << endl;
+	if(save.is_open()){
+		save << left << setw(16) << replace(plgn.nama)
+			  << right << setw(48) << replace(plgn.barang) 
+			  << setprecision(10) << setw(16) << plgn.tot_bayar
+			  << setprecision(10) << setw(16) << plgn.bayar
+			  << endl;
+	}	 
+	save.close();
+	 
+	searchInFile(barang);	
+	system("pause");
+}
+
+void rekap(){
+	Customer plgn[99];
+	int i =0;
+	ifstream rekap("rekap_beli.txt");
+	if (rekap.is_open()){
+		
+		while(!rekap.eof()){	
+			rekap >> plgn[i].nama >> plgn[i].barang >> plgn[i].tot_bayar >> plgn[i].bayar;
+		i++;		
+		}
+		
+	cout<<setfill('=')<<setw(90)<<"=";
+	cout<<"\nNama customer\tNama Barang\t\t\t\t\tTotal Bayar\tBayar\n";
+	cout<<setfill('=')<<setw(90)<<"="<<endl;
+		
+		for(int j= 0 ; j < i-1 ; j++){
+			cout<<setfill(' ')<<setiosflags(ios::left)<<setw(16)<< unreplace(plgn[j].nama);
+			cout<<setfill(' ')<<setiosflags(ios::left)<<setw(48)<< unreplace(plgn[j].barang);
+			cout<<setfill(' ')<<setiosflags(ios::left)<<setw(16)<< plgn[j].tot_bayar;
+			cout<<setfill(' ')<<setiosflags(ios::left)<<setw(16)<< plgn[j].bayar
+			<<endl;	
+		}
+	
+	cout<<setfill('=')<<setw(90)<<"="<<endl;
+	
+	}
+	
+	rekap.close();	
+	
+	system("pause");
+}
+
+main(){
+	int pilih;char jwb;string kode;
+	
+	do{
+	system("cls");
+	cout<< "==========================\n";
+	cout<< "      Toko Krisbow\n";
+	cout<< "==========================\n";
+	cout<< "1. Karyawan\n2. Pelanggan\nPilih : "; cin>> pilih;
+	
+	switch(pilih){
+		case 1 :system("cls");
+				cout << "Masukan Kode acces : "; cin >> kode;
+				if( kode != "krisbow") break;
+				do{
+					cout<< "==========================\n";
+					cout<< "      Toko Krisbow\n";
+					cout<< "==========================\n";
+					cout<< "1. Input barang\n2. Stock Barang\n3. Riwayat Pembelian\n4. Kembali ke menu sebelumnya\nPilih : "; cin>> pilih;
+					switch (pilih){
+						case 1 : 
+								Input();
+								break;
+								
+						case 2 :
+								sOutput();
+								break;
+								
+						case 3 :rekap();
+								break;
+					}
+					
+				}while(pilih != 4);
+				break;
+		case 2 :
+				do{
+					float dis = 0;
+					system("cls");
+					cout<< "==========================\n";
+					cout<< "      Toko Krisbow\n";
+					cout<< "==========================\n";
+					cout<< "1. Kode Voucer\n2. Store\n3. Kembali ke menu sebelumnya\nPilih : "; cin>> pilih;
+					switch (pilih){
+						case 1 : 
+								cout << "Masukan Kode Voucer : "; cin >> kode;
+								if (kode == "12345"){
+									 dis = 0.1;
+									 cout << "Kode terinclude, anda mendapatkan disc 10% setiap total pembelian 3 barang\n";
+								}else cout << "Kode voucher salah\n";
+								system("pause");
+								break;	 
+						case 2 :
+								beli(dis);
+								break;
+					}
+						
+				}while(pilih != 3);
+				 break;
+		
+		}
+		
+		cout << "Keluar [y/n] : "; cin >> jwb;
+	}while(jwb == 'n');
+}
